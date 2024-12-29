@@ -1,0 +1,170 @@
+//Kodak_Karusell_MP3_controll, by Philipp Naujoks
+
+
+#include <SoftwareSerial.h>
+#include <DFRobotDFPlayerMini.h>
+
+// Define the initial variables
+long t = 185000;  // Total time in milliseconds
+int k = 400;      // Duration of each relay activation in milliseconds
+
+// Array to store 82 different values for b in milliseconds (moments of activation)
+long b[82] = {
+  1000,
+  7000,
+  11000,
+  16000,
+  23000,
+  28000,
+  30000,
+  35000,
+  39000,
+  44000,
+  49000,
+  53000,
+  56000,
+  63000,
+  67000,
+  72000,
+  77000,
+  118000,
+  137000,
+  165000,
+  201000,
+  213000,
+  219000,
+  231000,
+  239000,
+  243000,
+  248000,
+  252000,
+  257000,
+  262000,
+  267000,
+  273000,
+  277000,
+  283000,
+  318000,
+  332000,
+  338000,
+  344000,
+  347000,
+  349000,
+  351000,
+  379000,
+  415000,
+  455000,
+  486000,
+  514000,
+  522000,
+  527000,
+  533000,
+  536000,
+  538000,
+  541000,
+  543000,
+  547000,
+  575000,
+  602000,
+  608000,
+  616000,
+  630000,
+  650000,
+  655000,
+  674000,
+  706000,
+  775000,
+  852000,
+  895000,
+  908000,
+  919000,
+  931000,
+  940000,
+  954000,
+  964000,
+  977000,
+  987000,
+  997000,
+  1036000,
+  1060000,
+  1072000,
+  1093000,
+  1115000,
+  1149000,
+  1180000,
+};
+
+// Pin where the relay is connected
+const int relayPin = 6;
+const int resetPin = 7;  // Define the reset pin for DFPlayer Mini, if available
+
+// Define the serial pins for DFPlayer Mini
+SoftwareSerial mySerial(10, 9);  // RX 10, TX 9
+DFRobotDFPlayerMini myDFPlayer;
+
+
+
+void setup() {
+
+  // Initialize serial communication at 9600 bits per second
+  Serial.begin(9600);
+  mySerial.begin(9600);
+
+  // Initialize the relay pin as an output
+  pinMode(relayPin, OUTPUT);
+  // Initialize the reset pin as an output, if used
+  pinMode(resetPin, OUTPUT);
+
+
+  // Wait for 10 seconds at the start
+  delay(1000);
+
+  // Try to initialize the DFPlayer Mini multiple times
+  bool dfPlayerReady = false;
+  for (int attempts = 0; attempts < 8 && !dfPlayerReady; attempts++) {
+    if (myDFPlayer.begin(mySerial)) {
+      dfPlayerReady = true;
+    } else {
+      Serial.println("DFPlayer Mini initialization failed! Trying again...");
+      delay(50);  // Wait x seconds before trying again
+    }
+  }
+
+  if (!dfPlayerReady) {
+    Serial.println("DFPlayer Mini failed to initialize after multiple attempts.");
+    while (true)
+      ;  // Stop the program if the DFPlayer fails to initialize
+  }
+
+  Serial.println("DFPlayer Mini online.");
+}
+
+void loop() {
+      digitalWrite(relayPin, LOW);
+
+in, HIGH);
+  delay(2000);              
+  myDFPlayer.volume(20);    // Set volume to 25 and play song 2 before relay activation
+  myDFPlayer.play(2);
+
+  // Loop through the moments of activation
+  for (int i = 0; i < 82; i++) {
+    // Wait until the moment of activation
+    long waitTime = (i == 0) ? b[i] : (b[i] - b[i - 1] - k);
+    delay(waitTime);
+
+    // Print the current activation moment
+    Serial.print("Deactivating relay at ");
+    Serial.print(b[i]);
+    Serial.println(" ms");
+
+    // Deactivate the relay for 400 milliseconds
+    digitalWrite(relayPin, LOW);
+    delay(k);  // Relay is inactive for 400 milliseconds
+    digitalWrite(relayPin, HIGH);
+    delay(5000);
+  }
+
+  // Wait for 5 seconds after completing the cycle
+  delay(9000);
+}
